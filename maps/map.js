@@ -1,4 +1,4 @@
-let load = (filepath) => new Promise((resolve, reject) => {
+const load = (filepath) => new Promise((resolve, reject) => {
     let xhr = new XMLHttpRequest();
 
     xhr.open('GET', `http://localhost:8000/${filepath}`);
@@ -14,21 +14,21 @@ let load = (filepath) => new Promise((resolve, reject) => {
 
 mapboxgl.accessToken = '';
 
-map = new mapboxgl.Map({
+const map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/light-v9',
     zoom: 3
 });
 
-let countriesP = load('countries.json');
-let mapP = new Promise((resolve, reject) => {
+const countriesP = load('countries.json');
+const mapP = new Promise((resolve, reject) => {
     map.on('load', resolve);
 });
 
 let currLayerID = '';
-let displayCountry = () => {
+const displayCountry = () => {
     Promise.all([countriesP, mapP]).then(([countries]) => {
-        let cca3 = location.hash.substr(1);
+        const cca3 = location.hash.substr(1);
 
         if (cca3 == '') {
             return;
@@ -42,7 +42,7 @@ let displayCountry = () => {
                 }
             }
 
-            let [lat, lng] = country.latlng;
+            const [lat, lng] = country.latlng;
 
             if (currLayerID != '') {
                 map.removeLayer(currLayerID);
