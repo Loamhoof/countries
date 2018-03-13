@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
 
-	// "github.com/paulmach/go.geo"
+	"github.com/paulmach/go.geo"
 	"github.com/paulmach/go.geojson"
 )
 
@@ -50,7 +51,34 @@ func main() {
 		geos[country.CCA3] = geo
 	}
 
-	log.Print(geos)
+	log.Print(polygonArea(geos["FRA"].Features[0].Geometry.MultiPolygon[9]) / 1e6)
+}
+
+func polygonArea(polygon [][][]float64) float64 {
+	area := pathArea(polygon[0])
+
+	if len(polygon) == 1 {
+		return area
+	}
+
+	for _, hole := range polygon[1:] {
+		area -= pathArea(hole)
+	}
+
+	return area
+}
+
+func pathArea(path [][]float64) float64 {
+	var area float64
+	for i := 0; i < len(path); i++ {
+		area += rad(path[(i+1)%len(path)][0]-path[i][0]) * (2 + math.Sin(rad(path[i][1])) + math.Sin(rad(path[(i+1)%len(path)][1])))
+	}
+
+	return area * geo.EarthRadius * geo.EarthRadius / 2
+}
+
+func rad(x float64) float64 {
+	return x * math.Pi / 180
 }
 
 type Countries []Country
