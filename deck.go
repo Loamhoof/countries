@@ -3,8 +3,11 @@ package main
 import (
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
+	"sort"
+	"strings"
 )
 
 func init() {
@@ -36,7 +39,9 @@ func main() {
 
 	w.Write(COLUMNS)
 
-	log.Print(countries[0])
+	for _, c := range countries {
+		w.Write(c.toRecord())
+	}
 }
 
 type Countries []Country
@@ -76,7 +81,7 @@ type Country struct {
 	} `json:"translations"`
 }
 
-const COLUMNS = []string{
+var COLUMNS = []string{
 	"name.common",
 	"name.official",
 	"tlds",
@@ -86,7 +91,7 @@ const COLUMNS = []string{
 	"cioc",
 	"independent",
 	"status",
-	"currencies",
+	"currencyCodes",
 	"callingCodes",
 	"capitals",
 	"altSpellings",
@@ -126,6 +131,9 @@ const COLUMNS = []string{
 	"borders",
 	"area",
 	"flag",
+	// "currencies",
+	"flagImg",
+	"mapImg",
 }
 
 func (c *Country) toRecord() []string {
@@ -146,6 +154,42 @@ func (c *Country) toRecord() []string {
 		c.Region,
 		c.SubRegion,
 		mssts(c.Languages),
+		c.Translations["cym"].Common,
+		c.Translations["cym"].Official,
+		c.Translations["deu"].Common,
+		c.Translations["deu"].Official,
+		c.Translations["est"].Common,
+		c.Translations["est"].Official,
+		c.Translations["fin"].Common,
+		c.Translations["fin"].Official,
+		c.Translations["fra"].Common,
+		c.Translations["fra"].Official,
+		c.Translations["hrv"].Common,
+		c.Translations["hrv"].Official,
+		c.Translations["ita"].Common,
+		c.Translations["ita"].Official,
+		c.Translations["jpn"].Common,
+		c.Translations["jpn"].Official,
+		c.Translations["nld"].Common,
+		c.Translations["nld"].Official,
+		c.Translations["por"].Common,
+		c.Translations["por"].Official,
+		c.Translations["rus"].Common,
+		c.Translations["rus"].Official,
+		c.Translations["slk"].Common,
+		c.Translations["slk"].Official,
+		c.Translations["spa"].Common,
+		c.Translations["spa"].Official,
+		c.Translations["zho"].Common,
+		c.Translations["zho"].Official,
+		c.Demonym,
+		bts(c.Landlocked),
+		ssts(c.Borders),
+		fts(c.Area),
+		c.Flag,
+		// "currencies",
+		fmt.Sprintf("flag_%s.png", strings.ToLower(c.CCA3)),
+		fmt.Sprintf("map_%s.png", strings.ToLower(c.CCA3)),
 	}
 
 	return record
@@ -164,11 +208,19 @@ func ssts(ss []string) string {
 }
 
 func mssts(mss map[string]string) string {
-	return ""
-	// values := make([]string, len(mss))
+	values := make([]string, len(mss))
 
-	// i := 0
-	// for _, v := range values {
+	i := 0
+	for _, v := range mss {
+		values[i] = v
+		i++
+	}
 
-	// }
+	sort.Strings(values)
+
+	return ssts(values)
+}
+
+func fts(f float64) string {
+	return fmt.Sprintf("%v", f)
 }

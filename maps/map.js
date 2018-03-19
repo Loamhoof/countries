@@ -55,7 +55,7 @@
                 return;
             }
 
-            load(`data/${nextCCA3.toLowerCase()}.geo.json`).then((geojson) => {
+            load(`data/geojson/${nextCCA3.toLowerCase()}.geo.json`).then((geojson) => {
                 if (zoom != currZoom) {
                     currZoom = zoom;
 
