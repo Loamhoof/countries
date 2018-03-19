@@ -14,7 +14,7 @@ const countries = require('./countries.json');
             console.log(cca3, zoom);
 
             try {
-                await page.goto(`http://localhost:8000/maps/map.html#${cca3},${zoom}`, { timeout: 1 });
+                await page.goto(`http://localhost:8000/map_site/map.html#${cca3},${zoom}`, { timeout: 1 });
             } catch (_) {} // :D
             await page.waitForFunction(`window.currCCA3 == '${cca3}'`);
             await page.waitFor(2000);

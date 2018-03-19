@@ -33,7 +33,7 @@
         'state-label-lg'
     ];
 
-    const countriesP = load('countries.json');
+    const countriesP = load('data/countries.json');
     const mapP = new Promise((resolve, reject) => {
         map.on('load', () => {
             for (let layer of layersToRemove) {

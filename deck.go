@@ -4,8 +4,10 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 )
@@ -15,7 +17,7 @@ func init() {
 }
 
 func main() {
-	fCountries, err := os.Open("countries.json")
+	fCountries, err := os.Open(filepath.Join("data", "countries.json"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -26,6 +28,27 @@ func main() {
 	countries := make(Countries, 250)
 	if err := decoder.Decode(&countries); err != nil {
 		log.Fatal(err)
+	}
+
+	fCurrencies, err := os.Open(filepath.Join("data", "currencies", "codes-all.csv"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer fCurrencies.Close()
+
+	r := csv.NewReader(fCurrencies)
+
+	currenciesMapping := make(map[string]string)
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		currenciesMapping[record[2]] = record[1]
 	}
 
 	fDeck, err := os.Create("deck.csv")
@@ -40,7 +63,7 @@ func main() {
 	w.Write(COLUMNS)
 
 	for _, c := range countries {
-		w.Write(c.toRecord())
+		w.Write(c.toRecord(currenciesMapping))
 	}
 }
 
@@ -131,12 +154,17 @@ var COLUMNS = []string{
 	"borders",
 	"area",
 	"flag",
-	// "currencies",
+	"currencies",
 	"flagImg",
 	"mapImg",
 }
 
-func (c *Country) toRecord() []string {
+func (c *Country) toRecord(currenciesMapping map[string]string) []string {
+	currencies := make([]string, len(c.Currency))
+	for i, currencyCode := range c.Currency {
+		currencies[i] = currenciesMapping[currencyCode]
+	}
+
 	record := []string{
 		c.Name.Common,
 		c.Name.Official,
@@ -187,7 +215,7 @@ func (c *Country) toRecord() []string {
 		ssts(c.Borders),
 		fts(c.Area),
 		c.Flag,
-		// "currencies",
+		ssts(currencies),
 		fmt.Sprintf("flag_%s.png", strings.ToLower(c.CCA3)),
 		fmt.Sprintf("map_%s.png", strings.ToLower(c.CCA3)),
 	}
