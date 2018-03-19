@@ -49,31 +49,29 @@
     let currLayerID = '';
     const displayCountry = () => {
         Promise.all([countriesP, mapP]).then(([countries]) => {
-            const [cca3, zoom=3] = location.hash.substr(1).split(',');
+            const [nextCCA3, zoom=3] = location.hash.substr(1).split(',');
 
-            if (cca3 == '') {
+            if (nextCCA3 == '') {
                 return;
             }
 
-            load(`data/${cca3}.geo.json`).then((geojson) => {
+            load(`data/${nextCCA3.toLowerCase()}.geo.json`).then((geojson) => {
                 if (zoom != currZoom) {
                     currZoom = zoom;
 
                     map.setZoom(zoom);
                 }
 
-                let country;
-                for (country of countries) {
-                    if (country.cca3 == cca3.toUpperCase()) {
-                        break;
-                    }
+                const country = countries.find(({cca3}) => cca3 == nextCCA3);
+                if (!country) {
+                    return;
                 }
 
                 const [lat, lng] = country.latlng;
 
                 map.setCenter([lng, lat]);
 
-                if (cca3 == currCCA3) {
+                if (nextCCA3 == currCCA3) {
                     return;
                 }
 
@@ -98,7 +96,7 @@
                     }
                 });
 
-                currCCA3 = cca3;
+                currCCA3 = nextCCA3;
             });
         });
     };
@@ -106,7 +104,7 @@
     window.onhashchange = displayCountry;
 
     window.onkeyup = ({ key }) => {
-        Promise.all([countriesP, mapP]).then(([countries]) => {
+        countriesP.then((countries) => {
             switch (key) {
             case 'ArrowUp':
                 location.hash = `#${currCCA3},${Math.min(24, parseInt(currZoom)+1)}`;
@@ -118,20 +116,18 @@
                 return;
             }
 
-            let i;
-            for (i=0; i<countries.length; i++) {
-                if (countries[i].cca3 == currCCA3.toUpperCase()) {
-                    break;
-                }
+            const i = countries.findIndex(({cca3}) => cca3 == currCCA3);
+            if (i == -1) {
+                return;
             }
 
             switch (key) {
             case 'ArrowLeft':
-                location.hash = `#${countries[(i-1+countries.length)%countries.length].cca3.toLowerCase()},${currZoom}`;
+                location.hash = `#${countries[(i-1+countries.length)%countries.length].cca3},${currZoom}`;
 
                 return;
             case 'ArrowRight':
-                location.hash = `#${countries[(i+1+countries.length)%countries.length].cca3.toLowerCase()},${currZoom}`;
+                location.hash = `#${countries[(i+1+countries.length)%countries.length].cca3},${currZoom}`;
 
                 return;
             }
