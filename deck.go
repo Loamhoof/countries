@@ -1,16 +1,10 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/json"
-	"fmt"
 	"log"
-	"math"
 	"os"
-	"path/filepath"
-	"strings"
-
-	"github.com/paulmach/go.geo"
-	"github.com/paulmach/go.geojson"
 )
 
 func init() {
@@ -18,67 +12,31 @@ func init() {
 }
 
 func main() {
-	f, err := os.Open("countries.json")
+	fCountries, err := os.Open("countries.json")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer f.Close()
+	defer fCountries.Close()
 
-	decoder := json.NewDecoder(f)
+	decoder := json.NewDecoder(fCountries)
 	decoder.DisallowUnknownFields()
 	countries := make(Countries, 250)
 	if err := decoder.Decode(&countries); err != nil {
 		log.Fatal(err)
 	}
 
-	geos := make(map[string]*geojson.FeatureCollection)
-	for _, country := range countries {
-		geopath := filepath.Join("data", fmt.Sprintf("%s.geo.json", strings.ToLower(country.CCA3)))
-		f, err := os.Open(geopath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer f.Close()
-
-		decoder := json.NewDecoder(f)
-		decoder.DisallowUnknownFields()
-		geo := new(geojson.FeatureCollection)
-		if err := decoder.Decode(geo); err != nil {
-			log.Print(geopath)
-			log.Fatal(err)
-		}
-
-		geos[country.CCA3] = geo
+	fDeck, err := os.Create("deck.csv")
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer fDeck.Close()
 
-	log.Print(polygonArea(geos["FRA"].Features[0].Geometry.MultiPolygon[9]) / 1e6)
-}
+	w := csv.NewWriter(fDeck)
+	defer w.Flush()
 
-func polygonArea(polygon [][][]float64) float64 {
-	area := pathArea(polygon[0])
+	w.Write(COLUMNS)
 
-	if len(polygon) == 1 {
-		return area
-	}
-
-	for _, hole := range polygon[1:] {
-		area -= pathArea(hole)
-	}
-
-	return area
-}
-
-func pathArea(path [][]float64) float64 {
-	var area float64
-	for i := 0; i < len(path); i++ {
-		area += rad(path[(i+1)%len(path)][0]-path[i][0]) * (2 + math.Sin(rad(path[i][1])) + math.Sin(rad(path[(i+1)%len(path)][1])))
-	}
-
-	return area * geo.EarthRadius * geo.EarthRadius / 2
-}
-
-func rad(x float64) float64 {
-	return x * math.Pi / 180
+	log.Print(countries[0])
 }
 
 type Countries []Country
@@ -116,4 +74,101 @@ type Country struct {
 		Common   string `json:"common"`
 		Official string `json:"official"`
 	} `json:"translations"`
+}
+
+const COLUMNS = []string{
+	"name.common",
+	"name.official",
+	"tlds",
+	"cca2",
+	"ccn3",
+	"cca3",
+	"cioc",
+	"independent",
+	"status",
+	"currencies",
+	"callingCodes",
+	"capitals",
+	"altSpellings",
+	"region",
+	"subregion",
+	"languages",
+	"translation.cym.common",
+	"translation.cym.official",
+	"translation.deu.common",
+	"translation.deu.official",
+	"translation.est.common",
+	"translation.est.official",
+	"translation.fin.common",
+	"translation.fin.official",
+	"translation.fra.common",
+	"translation.fra.official",
+	"translation.hrv.common",
+	"translation.hrv.official",
+	"translation.ita.common",
+	"translation.ita.official",
+	"translation.jpn.common",
+	"translation.jpn.official",
+	"translation.nld.common",
+	"translation.nld.official",
+	"translation.por.common",
+	"translation.por.official",
+	"translation.rus.common",
+	"translation.rus.official",
+	"translation.slk.common",
+	"translation.slk.official",
+	"translation.spa.common",
+	"translation.spa.official",
+	"translation.zho.common",
+	"translation.zho.official",
+	"demonym",
+	"landlocked",
+	"borders",
+	"area",
+	"flag",
+}
+
+func (c *Country) toRecord() []string {
+	record := []string{
+		c.Name.Common,
+		c.Name.Official,
+		ssts(c.TLD),
+		c.CCA2,
+		c.CCN3,
+		c.CCA3,
+		c.CIOC,
+		bts(c.Independent),
+		c.Status,
+		ssts(c.Currency),
+		ssts(c.CallingCode),
+		ssts(c.Capital),
+		ssts(c.AltSpellings),
+		c.Region,
+		c.SubRegion,
+		mssts(c.Languages),
+	}
+
+	return record
+}
+
+func bts(b bool) string {
+	if b {
+		return "X"
+	}
+
+	return ""
+}
+
+func ssts(ss []string) string {
+	return strings.Join(ss, "/")
+}
+
+func mssts(mss map[string]string) string {
+	return ""
+	// values := make([]string, len(mss))
+
+	// i := 0
+	// for _, v := range values {
+
+	// }
 }
